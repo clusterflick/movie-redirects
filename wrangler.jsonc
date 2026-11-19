@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clusterflick-movie-redirects",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  // In front of every film page. `/movies/*` also matches `/movies/`, which
+  // GitHub Pages answers itself.
+  //
+  // No `global_fetch_strictly_public`, unlike the other Workers: passing a
+  // request through to the site is a fetch to this same route, and only
+  // same-zone routing sends that to GitHub Pages. Over the public internet it
+  // would come back in through Cloudflare and reach this Worker again.
+  "routes": [
+    { "pattern": "clusterflick.com/movies/*", "zone_name": "clusterflick.com" },
+  ],
+  "workers_dev": false,
+  "vars": {
+    // Where pages and the map (`/movie-urls.json`) are fetched from.
+    // `.dev.vars` points it at `next dev`.
+    "SITE_ORIGIN": "https://clusterflick.com",
+  },
+  // api-profiles has 8788; the site's `next dev` is on 3000.
+  "dev": { "port": 8789 },
+  // Workers Paid has no spend cap, so a ceiling per request. A 404 is matched
+  // against every showing film's slugs, a few thousand short strings: at most
+  // 5.5ms in Node over Search Console's 936 film 404s and the map of 19
+  // November 2026. Headroom, not a fit.
+  "limits": { "cpu_ms": 200 },
+  "observability": { "enabled": true },
+}

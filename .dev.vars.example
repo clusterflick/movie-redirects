@@ -1,0 +1,4 @@
+# Copy to .dev.vars for `npm run dev`.
+#
+# Where the map is read from. The site's `next dev` serves /movie-urls.json.
+SITE_ORIGIN=http://localhost:3000

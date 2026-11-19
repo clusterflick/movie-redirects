@@ -1,0 +1,20 @@
+{
+  "name": "movie-redirects",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "lint": "tsc --noEmit && tsc --noEmit -p test",
+    "format": "prettier --write --ignore-path .gitignore --ignore-path .prettierignore .",
+    "test": "vitest run",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.2.8",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "~4.1.0",
+    "wrangler": "^4.141.0"
+  }
+}
