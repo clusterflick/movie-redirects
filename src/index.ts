@@ -1,5 +1,8 @@
 import { getMap } from "./map";
-import { resolve, type Decision } from "./resolve";
+import {
+  resolve,
+  type Decision,
+} from "@clusterflick/catalogue/utils/movie-url-map";
 
 /**
  * How long a browser may keep a 301. A slug can move again, and a browser

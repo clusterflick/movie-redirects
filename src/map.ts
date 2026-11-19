@@ -1,21 +1,16 @@
-/**
- * The site's `/movie-urls.json`, built with every deploy by
- * `src/utils/get-movie-url-map.ts` in clusterflick/clusterflick.com, which
- * documents each field. Change the two together.
- */
-export const MOVIE_URL_MAP_VERSION = 1;
-export const MAP_PATH = "/movie-urls.json";
+import {
+  MOVIE_URL_MAP_FILE,
+  MOVIE_URL_MAP_VERSION,
+  type MovieUrlMap,
+} from "@clusterflick/catalogue/utils/movie-url-map";
 
-export type MovieUrlMap = {
-  version: typeof MOVIE_URL_MAP_VERSION;
-  generatedAt: string;
-  /** Every film with a page, showing or departed: id -> its page's slug. */
-  slugs: Record<string, string>;
-  /** Showing films: a matched venue listing's old id -> the film. */
-  titleHashes: Record<string, string>;
-  /** Showing films: every slug they're listed under -> the films. */
-  liveSlugs: Record<string, string[]>;
-};
+/*
+ * The site's `/movie-urls.json`. Its shape and version, and the rules that
+ * read it, are @clusterflick/catalogue's (`utils/movie-url-map`), shared with
+ * data-analysed's Film 404 Log, so the log says what this Worker does. What's
+ * here is only how the Worker gets hold of it.
+ */
+export type { MovieUrlMap };
 
 /**
  * As long as GitHub Pages lets anyone else keep a page (`max-age=600`), so a
@@ -52,21 +47,23 @@ function isMovieUrlMap(value: unknown): value is MovieUrlMap {
 async function fetchMap(origin: string): Promise<MovieUrlMap> {
   // Not from Cloudflare's cache: the zone's "Cache JSON blobs" rule would
   // hold a fixed-name `.json` for a year.
-  const response = await fetch(new URL(MAP_PATH, origin), {
+  const response = await fetch(new URL(MOVIE_URL_MAP_FILE, origin), {
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new Error(`${MAP_PATH} answered ${response.status}`);
+    throw new Error(`${MOVIE_URL_MAP_FILE} answered ${response.status}`);
   }
   const body: unknown = await response.json();
   const version = (body as { version?: unknown } | null)?.version;
   if (version !== MOVIE_URL_MAP_VERSION) {
     throw new Error(
-      `${MAP_PATH} is version ${String(version)}; this Worker reads ${MOVIE_URL_MAP_VERSION}`,
+      `${MOVIE_URL_MAP_FILE} is version ${String(version)}; this Worker reads ${MOVIE_URL_MAP_VERSION}`,
     );
   }
   if (!isMovieUrlMap(body)) {
-    throw new Error(`${MAP_PATH} is missing slugs, titleHashes or liveSlugs`);
+    throw new Error(
+      `${MOVIE_URL_MAP_FILE} is missing slugs, titleHashes or liveSlugs`,
+    );
   }
   return body;
 }

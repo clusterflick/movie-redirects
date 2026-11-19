@@ -25,7 +25,10 @@ already seen the 404.
 Every request under `/movies/` goes through to GitHub Pages. Only a 404 from
 the site is looked at; a page that exists, and the site's own redirects, are
 passed back exactly as they came. A 404 is checked against the site's map of
-film URLs (see [The map](#the-map)), in this order:
+film URLs (see [The map](#the-map)), in this order. The rules are `resolve`
+in `@clusterflick/catalogue/utils/movie-url-map`, which data-analysed's Film
+404 Log runs too, so its record of each deploy's lost URLs says what this
+Worker does with them:
 
 | The 404                                           | Response                     |
 | ------------------------------------------------- | ---------------------------- |
@@ -66,7 +69,8 @@ BFI") and the next edition of a finished event (`…-2026` → `…-2027`), wher
 that's the only one showing. Measured against the films showing on 19
 November 2026:
 
-- **Only slugs of 20 characters or more** (`FUZZY_MIN_LENGTH`). In a short
+- **Only slugs of 20 characters or more** (`FUZZY_MIN_LENGTH` in the
+  catalogue package). In a short
   slug one edit is usually a different title (`practical-magic` and
   `practical-magic-2` were both showing).
 - **Within 10% of the longer slug's length** (`FUZZY_MAX_DISTANCE`). The
@@ -87,21 +91,27 @@ were pages again, 17 were sent on by id or hash, 5 by slug, and 310 stayed
 
 The site builds `/movie-urls.json` with every deploy, from the listings and
 the departed films (`src/utils/get-movie-url-map.ts` in
-clusterflick/clusterflick.com, which documents each field). Version 1 holds:
+clusterflick/clusterflick.com). Its shape is `MovieUrlMap` in
+`@clusterflick/catalogue/utils/movie-url-map`, which documents each field.
+Version 1 holds:
 
 - `slugs`: every film with a page, showing or departed, and its slug.
 - `titleHashes`: the old id of a matched listing, and the showing film it
   became.
 - `liveSlugs`: every slug a showing film is listed under (its title, its
   other English titles and its venues' titles), and the films under it.
+- `departed` and `unmatched` (optional): which pages are departed films and
+  which are unmatched listings. The Worker doesn't need them; the Film 404
+  Log reads them to say why a URL went.
 
 The Worker reads it from the site with `cache: "no-store"`, since the zone's
 "Cache JSON blobs" rule would hold a fixed-name `.json` for a year, and keeps
 it for ten minutes (`MAP_TTL_MS`), GitHub Pages' own `max-age`. A refresh
 that fails falls back to the map held last, with an error logged; with no map
 at all, every 404 stays a 404. A map at a version this Worker wasn't built for
-is refused, so a change to its shape has to raise `MOVIE_URL_MAP_VERSION` on
-both sides.
+is refused. A change to the shape or the rules is a release of the catalogue
+package, which this Worker then moves to; `MOVIE_URL_MAP_VERSION` is raised
+there when a field is removed, renamed or changes meaning.
 
 ## Logs
 
